@@ -1,23 +1,13 @@
 import marimo
 
-# /// script
-# requires-python = ">=3.12"
-# dependencies = [
-#     "marimo>=0.19.6",
-#     "polars>=1.37.0",
-#     "altair>=5.0.0",
-#     "numpy>=2.0.0",
-#     "scikit-learn>=1.5.0",
-# ]
-# ///
-
-__generated_with = "0.19.7"
+__generated_with = "0.20.1"
 app = marimo.App(width="medium")
 
 
 @app.cell
 def _():
     import marimo as mo
+
     return (mo,)
 
 
@@ -26,6 +16,7 @@ def _():
     import polars as pl
     import altair as alt
     import numpy as np
+
     return alt, np, pl
 
 
@@ -116,7 +107,13 @@ def _(mo, pl):
             ),
         ]
     )
-    return contributions, contributors_meta, matrix_df, occ_industry, recipients_meta
+    return (
+        contributions,
+        contributors_meta,
+        matrix_df,
+        occ_industry,
+        recipients_meta,
+    )
 
 
 @app.cell
@@ -223,9 +220,14 @@ def _(mo):
 
 
 @app.cell
-def _(mo):
+def _(contributions, mo, pl):
     # ---- Exercise 0 ----
-    mit_top_donors = ...  # YOUR CODE
+    mit_top_donors = contributions.filter(
+        # Filter contributions to rows where contributor_employer contains "mit"
+        pl.col("contributor_employer").str.to_lowercase().str.contains("mit")
+    ).group_by(["bonica_cid", "contributor_name"], ).agg(pl.col("total_amount").sum()).sort(by="total_amount", descending=True).head(5)
+    # Group by bonica_cid and contributor_name, summing total_amount.
+    # YOUR CODE
 
     mo.stop(
         mit_top_donors is ...,
@@ -276,18 +278,32 @@ def _(mo):
 
 
 @app.cell
-def _(mo):
+def _(alt, contributions, mo, pl):
     # ---- Exercise 1 ----
     # Steps 1-2: Filter to House/Senate candidates and the two major parties,
     # add an in_state column, group by party and in_state, and add labels.
     _congressional = (
-        ...
+        contributions.filter(
+            pl.col("seat").is_in(["federal:house", "federal:senate"])
+        ).filter(pl.col("recipient_party").is_in(["100", "200"]))
     )  # YOUR CODE: filter contributions on seat and recipient_party
 
     # Add an in_state column (True when contributor_state == recipient_state)
     # then group by recipient_party and in_state, summing total_amount.
     # Add readable labels for party and in_state.
-    in_out_state = ...  # YOUR CODE
+    in_out_state = _congressional.with_columns((pl.col("contributor_state") == pl.col('recipient_state')).alias("in_state"
+         )
+        ).group_by(['recipient_party', 'in_state']).agg(pl.col('total_amount').sum()).with_columns(
+        pl.when(pl.col("recipient_party") == "100")
+        .then(pl.lit("Democrat"))
+        .otherwise(pl.lit("Republican"))
+        .alias("party")
+    ).with_columns(
+        pl.when(pl.col("in_state") == True)
+        .then(pl.lit("In-State"))
+        .otherwise(pl.lit("Out-of-State"))
+        .alias("in_state")
+    )
 
     mo.stop(
         _congressional is ... or in_out_state is ...,
@@ -297,7 +313,19 @@ def _(mo):
     )
 
     # Step 3: Create a normalized stacked bar chart
-    _ex1_chart = ...  # YOUR CODE
+    _ex1_chart = alt.Chart(
+        in_out_state, title="In-state vs. out-of-state donations"
+    ).mark_bar().encode(
+        x=alt.X("total_amount:Q", title="Share of total donation amount", stack="normalize"),
+        y=alt.Y("party", title=None),
+        color=alt.Color(
+            "in_state:N",
+            scale=alt.Scale(
+                domain=["In-State", "Out-of-State"], range=["#2166ac", "#b2182b"]
+            ),
+            title="Donation Source",
+        ),
+    ).properties(width=600, height=350)  # YOUR CODE
 
     mo.stop(
         _ex1_chart is ...,
@@ -399,7 +427,7 @@ def _(mo):
 
 
 @app.cell
-def _(contributions, mo, occ_industry):
+def _(alt, contributions, mo, occ_industry, pl):
     # ---- Exercise 2 ----
 
     # Step 1: Join contributions with the occupation-to-industry mapping
@@ -408,7 +436,7 @@ def _(contributions, mo, occ_industry):
     )
 
     # Step 2: Filter to major parties and non-null industries
-    _filtered = ...  # YOUR CODE: filter _with_industry with two conditions
+    _filtered = _with_industry.filter(pl.col("recipient_party").is_in(["100", "200"]) & pl.col("industry").is_not_null())  # YOUR CODE: filter _with_industry with two conditions
 
     mo.stop(
         _filtered is ...,
@@ -418,7 +446,13 @@ def _(contributions, mo, occ_industry):
     )
 
     # Step 3: Group by industry and party, sum amounts, add party label
-    industry_party = ...  # YOUR CODE
+    industry_party = _filtered.group_by(['industry', 'recipient_party']).agg(pl.col("total_amount").sum()
+                    ).with_columns(
+        pl.when(pl.col("recipient_party") == "100")
+        .then(pl.lit("Democrat"))
+        .otherwise(pl.lit("Republican"))
+        .alias("party")
+    )
 
     mo.stop(
         industry_party is ...,
@@ -428,7 +462,19 @@ def _(contributions, mo, occ_industry):
     )
 
     # Step 4: Create a normalized stacked bar chart
-    _ex2_chart = ...  # YOUR CODE
+    _ex2_chart = alt.Chart(
+        industry_party, title="Donation Split by Party - Industry"
+    ).mark_bar().encode(
+        x=alt.X("total_amount:Q", title="Share of total donation amount", stack="normalize"),
+        y=alt.Y("industry:N", sort="-x", title=None),
+        color=alt.Color(
+            "party:N",
+            scale=alt.Scale(
+                domain=["Democrat", "Republican"], range=["#2166ac", "#b2182b"]
+            ),
+            title="Party",
+        ),
+    ).properties(width=600, height=350)  # YOUR CODE
 
     mo.stop(
         _ex2_chart is ...,
@@ -471,11 +517,35 @@ def _(mo):
 
 
 @app.cell
-def _(mo):
+def _(alt, contributions, mo, pl):
     # ---- Exercise 3 ----
     # Pick one of the questions from the prompt and implement your analysis here.
+    _party_occ = (
+        contributions.filter(
+            pl.col("recipient_party").is_in(["100", "200"])
+            & pl.col("contributor_occupation").is_not_null() & (pl.col("contributor_occupation") != "candidate")
+        ).group_by(["contributor_occupation", "recipient_party"])
+        .agg([pl.col("total_amount").sum().alias("total"), pl.col("total_amount").mean().alias("average_donation")])
+    )
 
-    _ex3_result = ...  # YOUR CODE: analysis + visualization
+    # Find top 10 occupations by total donations
+    _top_occs = (
+        _party_occ.group_by("contributor_occupation")
+        .agg(pl.col("total").sum().alias("grand_total"))
+        .sort("grand_total", descending=True)
+        .head(10)
+        .select("contributor_occupation")
+    )
+    _occ_party_split = _party_occ.join(
+        _top_occs, on="contributor_occupation"
+    )
+
+    _ex3_result = alt.Chart(
+        _occ_party_split, title="Average Donation Amount - Top 10 Occupations"
+    ).mark_bar().encode(
+        x=alt.X("average_donation:Q", title="Average Donation Amount ($)"),
+        y=alt.Y("contributor_occupation:N", sort="-x", title=None),
+    ).properties(width=600, height=350)  # YOUR CODE: analysis + visualization
 
     mo.stop(
         _ex3_result is ...,
@@ -742,7 +812,7 @@ def _(mo):
 
 
 @app.cell
-def _(X, mo, np, pl, recipient_ids, scores):
+def _(X, alt, mo, np, pl, recipient_ids, recipients_meta, scores):
     # ---- Exercise 6 ----
 
     # Step 1 (provided): Compute each recipient's ideology score as the
@@ -762,7 +832,12 @@ def _(X, mo, np, pl, recipient_ids, scores):
     )
 
     # Step 2: Join with recipients_meta and add a "party" label column
-    recipient_ideology = ...  # YOUR CODE
+    recipient_ideology = recipients_meta.join(_scores_df, on="bonica_rid", how="left").with_columns(
+        pl.when(pl.col("recipient_party") == "100")
+        .then(pl.lit("Democrat"))
+        .otherwise(pl.lit("Republican"))
+        .alias("party")
+    )  # YOUR CODE
 
     mo.stop(
         recipient_ideology is ...,
@@ -770,9 +845,8 @@ def _(X, mo, np, pl, recipient_ids, scores):
             "⚠️ **Complete Exercise 6, Step 2:** Join `_scores_df` with `recipients_meta` and add a `party` label column."
         ),
     )
-
     # Step 3: Take a random sample of 50 recipients
-    _sample = ...  # YOUR CODE: use .sample(50)
+    _sample = recipient_ideology.sample(50)  # YOUR CODE: use .sample(50)
 
     mo.stop(
         _sample is ...,
@@ -780,9 +854,35 @@ def _(X, mo, np, pl, recipient_ids, scores):
             "⚠️ **Complete Exercise 6, Step 3:** Take a random sample of 50 recipients."
         ),
     )
+    strip_plot = (
+        alt.Chart(_sample)
+        .mark_circle(size=120)
+        .encode(
+            x=alt.X(
+                "ideology_score:Q",
+                title="← Conservative · · · Liberal →",
+            ),
+            y=alt.value(50),
+            color=alt.Color(
+                "party:N",
+                scale=alt.Scale(
+                    domain=["Democrat", "Republican"],
+                    range=["#2166ac", "#b2182b"],
+                ),
+                legend=alt.Legend(title="Party"),
+            ),
+            tooltip=["recipient_name", "party"],
+        )
+    )
+
+    pca_number_line = (strip_plot ).properties(
+        width=500,
+        height=100,
+        title="PCA Ordering of Legislators (from voting patterns alone)",
+    )
 
     # Step 4: Create a dot chart
-    ideology_chart = ...  # YOUR CODE: alt.Chart(_sample).mark_circle(...)
+    ideology_chart = pca_number_line
 
     mo.stop(
         ideology_chart is ...,
@@ -833,7 +933,7 @@ def _(mo):
 
 
 @app.cell
-def _(contributors_meta, donor_ids, mo, np, occ_industry, pl, scores):
+def _(alt, contributors_meta, donor_ids, mo, np, occ_industry, pl, scores):
     # ---- Exercise 7 ----
 
     # Step 1 (provided): Build donor scores DataFrame
@@ -860,9 +960,24 @@ def _(contributors_meta, donor_ids, mo, np, occ_industry, pl, scores):
         (pl.col("pc1_score") >= _p01) & (pl.col("pc1_score") <= _p99)
     )
 
-    # Step 3: Faceted density plot by industry (top 8, excluding "Other")
-    industry_chart = ...  # YOUR CODE
+    top_8_industries = donor_plot.filter(pl.col('industry') != 'Other')['industry'].value_counts(sort=True).head(8)['industry'].to_list()
 
+    sorted_industries = (donor_plot.group_by("industry").agg(pl.col("pc1_score").mean().alias("avg_ideology")).sort(by="avg_ideology", descending=True))['industry'].to_list()
+    # Step 3: Faceted density plot by industry (top 8, excluding "Other")
+    industry_chart = (
+        alt.Chart(donor_plot.filter(pl.col('industry').is_in(top_8_industries))).transform_density("pc1_score", as_=["pc1_score", "density"], groupby=["industry"])
+        .mark_area()    
+        .encode(
+        alt.X('pc1_score:Q', title="← Conservative · · · Liberal →",),
+        alt.Y('density:Q', title="Density"),
+        alt.Row('industry:N', sort=sorted_industries)
+    ).properties(
+        width=500,
+        height=100,
+        title="Donor ideology distributions",
+    )
+    # YOUR CODE
+    )
     mo.stop(
         industry_chart is ...,
         mo.md(
