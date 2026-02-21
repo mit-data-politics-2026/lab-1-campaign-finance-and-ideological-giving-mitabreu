@@ -1,0 +1,27 @@
+Who is MIT's biggest political donor? Were you surprised?
+    - Ronald Rivest is MIT's largest political donor. I was not surprised. I had never heard of Ronald Rivest.
+
+Question: Which party receives a larger share of its money from out-of-state donors? What does that tell you about the "nationalization" of campaign finance?
+    - The republican party receives a slightly larger share of its money from out-of-state-donors.
+    The fact that so much of the shares for both parties come from out-of-state donors tells me capaign finance is extremely natonalized.
+
+Question: Which industries lean most Democratic? Most Republican? What might explain these patterns?
+    - Education, Science, and Legal lean the most Democratic. This makes sense because those in 
+    higher education typically lean Democratic. The most Republican leaning donors are retirees and
+    those in Business/Administration this could be explained as Republican policies typically benefit businesses
+    and retirees in a position to donate money to politicans would benefit from tax cuts.
+
+
+Summarize your findings. What patterns did you find and what might explain them?
+    - Besides candidates the occupations that donate the most money on average are chairman by far. This might be due to 
+    lobbying they may be doing for their comittee/company to get politicans that are likely to pass beneficial polices
+    in office.
+
+In your own words, what does this normalization accomplish? Why do we need to remove the effects of donor prolificness and candidate popularity before running PCA?
+    - The normalization allows us to remove the effects of donors donating to more candidates then other donors and the unusual popularity of certain candidates.
+    We need to remove these effects to ensure we capture the aspect of the data we actually care about: what candidates donors give to.
+
+Why might PC1 dominate so strongly in campaign finance data? What does the gap between PC1 and PC2 tell us about the structure of American political donations?
+    - This is likely because PC1 represents party. The gap between PC1 and PC2 tells us that American donators are very loyal to their party and have 
+    easily predictable donation patterns.
+    
