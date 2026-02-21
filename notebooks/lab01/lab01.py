@@ -236,16 +236,17 @@ def _(contributions, mo, pl):
         ),
     )
 
-    _ex0_reflection = mo.accordion(
-        {
-            "Reflection": mo.ui.text_area(
-                label="Who is MIT's biggest political donor? Were you surprised?",
-                full_width=True,
-            )
-        }
-    )
+    mit_top_donors
+    return
 
-    mo.vstack([mit_top_donors, _ex0_reflection])
+
+@app.cell
+def _(mo):
+    mo.md("""
+    **Reflection:** Who is MIT's biggest political donor? Were you surprised?
+
+    *YOUR ANSWER HERE*
+    """)
     return
 
 
@@ -334,16 +335,17 @@ def _(alt, contributions, mo, pl):
         ),
     )
 
-    _ex1_reflection = mo.accordion(
-        {
-            "Reflection": mo.ui.text_area(
-                label="Which party receives a larger share from out-of-state donors? What does that tell you about the nationalization of campaign finance?",
-                full_width=True,
-            )
-        }
-    )
+    _ex1_chart
+    return
 
-    mo.vstack([_ex1_chart, _ex1_reflection])
+
+@app.cell
+def _(mo):
+    mo.md("""
+    **Reflection:** Which party receives a larger share from out-of-state donors? What does that tell you about the nationalization of campaign finance?
+
+    *YOUR ANSWER HERE*
+    """)
     return
 
 
@@ -483,16 +485,17 @@ def _(alt, contributions, mo, occ_industry, pl):
         ),
     )
 
-    _ex2_reflection = mo.accordion(
-        {
-            "Reflection": mo.ui.text_area(
-                label="Which industries lean most Democratic? Most Republican? What might explain these patterns?",
-                full_width=True,
-            )
-        }
-    )
+    _ex2_chart
+    return
 
-    mo.vstack([_ex2_chart, _ex2_reflection])
+
+@app.cell
+def _(mo):
+    mo.md("""
+    **Reflection:** Which industries lean most Democratic? Most Republican? What might explain these patterns?
+
+    *YOUR ANSWER HERE*
+    """)
     return
 
 
@@ -554,16 +557,17 @@ def _(alt, contributions, mo, pl):
         ),
     )
 
-    _ex3_reflection = mo.accordion(
-        {
-            "Reflection": mo.ui.text_area(
-                label="Summarize your findings. What patterns did you find and what might explain them?",
-                full_width=True,
-            )
-        }
-    )
+    _ex3_result
+    return
 
-    mo.vstack([_ex3_result, _ex3_reflection])
+
+@app.cell
+def _(mo):
+    mo.md("""
+    **Reflection:** Summarize your findings. What patterns did you find and what might explain them?
+
+    *YOUR ANSWER HERE*
+    """)
     return
 
 
@@ -692,28 +696,24 @@ def _(X, mo, np):
     # Replace any NaN/Inf from division by zero with 0
     K = np.nan_to_num(K, nan=0.0, posinf=0.0, neginf=0.0)
 
-    _ex4_reflection = mo.accordion(
-        {
-            "Reflection": mo.ui.text_area(
-                label="In your own words, what does this normalization accomplish? Why do we need to remove the effects of donor prolificness and candidate popularity before running PCA?",
-                full_width=True,
-            )
-        }
-    )
-
-    mo.vstack(
-        [
-            mo.md(f"""
+    mo.md(f"""
     **Normalization complete!**
 
     - K shape: `{K.shape}`
     - K range: `[{K.min():.4f}, {K.max():.4f}]`
     - K mean: `{K.mean():.6f}`
-    """),
-            _ex4_reflection,
-        ]
-    )
+    """)
     return (K,)
+
+
+@app.cell
+def _(mo):
+    mo.md("""
+    **Reflection:** In your own words, what does this normalization accomplish? Why do we need to remove the effects of donor prolificness and candidate popularity before running PCA?
+
+    *YOUR ANSWER HERE*
+    """)
+    return
 
 
 @app.cell
@@ -759,25 +759,25 @@ def _(K, alt, mo, pl):
         .properties(width=600, height=300)
     )
 
-    _ex5_reflection = mo.accordion(
-        {
-            "Reflection": mo.ui.text_area(
-                label="Why might PC1 dominate so strongly in campaign finance data? What does the gap between PC1 and PC2 tell us about the structure of American political donations?",
-                full_width=True,
-            )
-        }
-    )
-
     mo.vstack(
         [
             mo.md(
                 f"**PC1 explains {pca.explained_variance_ratio_[0]:.1%} of the variance.**"
             ),
             scree_chart,
-            _ex5_reflection,
         ]
     )
     return (scores,)
+
+
+@app.cell
+def _(mo):
+    mo.md("""
+    **Reflection:** Why might PC1 dominate so strongly in campaign finance data? What does the gap between PC1 and PC2 tell us about the structure of American political donations?
+
+    *YOUR ANSWER HERE*
+    """)
+    return
 
 
 @app.cell
